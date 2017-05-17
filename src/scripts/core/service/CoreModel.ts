@@ -6,7 +6,7 @@
 import * as CoreExceptions from "../exceptions/CoreExceptions";
 
 export { AbstractCore, T1CResponse, DataResponse, DataArrayResponse, DataObjectResponse, InfoResponse, BrowserInfoResponse,
-    Card, CardReader, CardReadersResponse, SingleReaderResponse, PluginsResponse, PubKeyResponse };
+    Card, CardReader, CardReadersResponse, SingleReaderResponse, PubKeyResponse };
 
 
 interface AbstractCore {
@@ -15,7 +15,6 @@ interface AbstractCore {
     getPubKey(callback?: (error: CoreExceptions.RestException, data: PubKeyResponse) => void): void | Promise<PubKeyResponse>;
     info(callback?: (error: CoreExceptions.RestException, data: InfoResponse) => void): void | Promise<InfoResponse>;
     infoBrowser(callback?: (error: CoreExceptions.RestException, data: BrowserInfoResponse) => void): void | Promise<BrowserInfoResponse>;
-    plugins(callback?: (error: CoreExceptions.RestException, data: PluginsResponse) => void): void | Promise<PluginsResponse>;
     pollCardInserted(secondsToPollCard?: number,
                      callback?: (error: CoreExceptions.RestException, data: CardReader) => void,
                      connectReader?: () => void,
@@ -81,6 +80,7 @@ interface InfoResponse extends T1CResponse {
         os: string
         uid: string
         version: string
+        plugins: Plugin[]
     }
 }
 
@@ -120,12 +120,10 @@ interface SingleReaderResponse extends T1CResponse {
     data: CardReader
 }
 
-interface PluginsResponse extends T1CResponse {
-    data: [{
-        id: string
-        name: string
-        version: string
-    }]
+interface Plugin {
+    id: string
+    name: string
+    version: string
 }
 
 interface PubKeyResponse extends T1CResponse {

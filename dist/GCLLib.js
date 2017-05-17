@@ -18257,9 +18257,6 @@ var GCLLib =
 	            return es6_promise_1.Promise.resolve(CoreService.platformInfo());
 	        }
 	    };
-	    CoreService.prototype.plugins = function (callback) {
-	        return this.connection.get(this.url + CORE_PLUGINS, undefined, callback);
-	    };
 	    CoreService.prototype.pollCardInserted = function (secondsToPollCard, callback, connectReaderCb, insertCardCb, cardTimeoutCb) {
 	        var maxSeconds = secondsToPollCard || 30;
 	        var self = this;
