@@ -7,7 +7,7 @@ import * as CoreExceptions from "../exceptions/CoreExceptions";
 import * as _ from "lodash";
 import * as platform from "platform";
 import * as CoreModel from "./CoreModel";
-import { CardReader } from "./CoreModel";
+import { CardReader, T1CResponse } from "./CoreModel";
 import { Promise } from "es6-promise";
 
 export { CoreService };
@@ -17,6 +17,7 @@ const CORE_INFO = "/";
 const CORE_PLUGINS = "/plugins";
 const CORE_READERS = "/card-readers";
 const CORE_ACTIVATE = "/admin/activate";
+const CORE_CONTAINERS = "/admin/containers";
 const CORE_PUB_KEY = "/admin/certificate";
 
 class CoreService implements CoreModel.AbstractCore {
@@ -50,6 +51,11 @@ class CoreService implements CoreModel.AbstractCore {
     public activate(callback?: (error: CoreExceptions.RestException, data: CoreModel.T1CResponse)
         => void): void | Promise<CoreModel.T1CResponse> {
         return this.connection.post(this.url + CORE_ACTIVATE, {}, undefined, callback);
+    }
+
+    public downloadContainer(containerJWT: string,
+                             callback?: (error: CoreExceptions.RestException, data: T1CResponse) => void): void | Promise<T1CResponse> {
+        return this.connection.post(this.url + CORE_CONTAINERS, { jwt: containerJWT }, undefined, callback);
     }
 
     public getPubKey(callback?: (error: CoreExceptions.RestException, data: CoreModel.PubKeyResponse)

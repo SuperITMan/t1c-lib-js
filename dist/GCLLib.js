@@ -18213,6 +18213,7 @@ var GCLLib =
 	var CORE_PLUGINS = "/plugins";
 	var CORE_READERS = "/card-readers";
 	var CORE_ACTIVATE = "/admin/activate";
+	var CORE_CONTAINERS = "/admin/containers";
 	var CORE_PUB_KEY = "/admin/certificate";
 	var CoreService = (function () {
 	    function CoreService(url, connection) {
@@ -18242,6 +18243,9 @@ var GCLLib =
 	    };
 	    CoreService.prototype.activate = function (callback) {
 	        return this.connection.post(this.url + CORE_ACTIVATE, {}, undefined, callback);
+	    };
+	    CoreService.prototype.downloadContainer = function (containerJWT, callback) {
+	        return this.connection.post(this.url + CORE_CONTAINERS, { jwt: containerJWT }, undefined, callback);
 	    };
 	    CoreService.prototype.getPubKey = function (callback) {
 	        return this.connection.get(this.url + CORE_PUB_KEY, undefined, callback);

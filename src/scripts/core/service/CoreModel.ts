@@ -12,6 +12,8 @@ export { AbstractCore, T1CResponse, DataResponse, DataArrayResponse, DataObjectR
 interface AbstractCore {
     // async
     activate(callback?: (error: CoreExceptions.RestException, data: T1CResponse) => void): void | Promise<T1CResponse>;
+    downloadContainer(containerJWT: string,
+                      callback?: (error: CoreExceptions.RestException, data: T1CResponse) => void): void | Promise<T1CResponse>;
     getPubKey(callback?: (error: CoreExceptions.RestException, data: PubKeyResponse) => void): void | Promise<PubKeyResponse>;
     info(callback?: (error: CoreExceptions.RestException, data: InfoResponse) => void): void | Promise<InfoResponse>;
     infoBrowser(callback?: (error: CoreExceptions.RestException, data: BrowserInfoResponse) => void): void | Promise<BrowserInfoResponse>;
