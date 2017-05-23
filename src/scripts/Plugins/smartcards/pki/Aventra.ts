@@ -6,22 +6,22 @@ import {LocalConnection} from "../../../core/client/Connection";
 import * as CoreExceptions from "../../../core/exceptions/CoreExceptions";
 
 interface AbstractAventra{
-    allDataFilters():Array<string>;
-    allCertFilters():Array<string>;
-    allKeyRefs():Array<string>;
-    allAlgoRefsForAuthentication(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    allAlgoRefsForSigning(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    allData(filters:string[],callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    allCerts(filters:string[], callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    rootCertificate(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    issuerCertificate(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    authenticationCertificate(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    signingCertificate(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    encryptionCertificate(callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    verifyPin(body:any,callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    resetPin(body:any,callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    signData(body:any,callback:(error:CoreExceptions.RestException, data:any) => void):void;
-    authenticate(body:any,callback:(error:CoreExceptions.RestException, data:any) => void):void;
+    allDataFilters(): Array<string>;
+    allCertFilters(): Array<string>;
+    allKeyRefs(): Array<string>;
+    allAlgoRefsForAuthentication(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    allAlgoRefsForSigning(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    allData(filters: string[], callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    allCerts(filters: string[], callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    rootCertificate(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    issuerCertificate(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    authenticationCertificate(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    signingCertificate(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    encryptionCertificate(callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    verifyPin(body: any, callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    resetPin(body: any, callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    signData(body: any, callback: (error: CoreExceptions.RestException, data: any) => void): void;
+    authenticate(body: any, callback: (error: CoreExceptions.RestException, data: any) => void): void;
 }
 
 const SEPARATOR = "/";
