@@ -223,7 +223,7 @@ class GCLClient {
                                         reject(syncError);
                                         return;
                                     } else {
-                                        resolve();
+                                        resolve(self.core().syncContainers(activationResponse.token));
                                     }
                                 });
                             });
@@ -239,7 +239,7 @@ class GCLClient {
                                 return;
                             }
                             self_cfg.jwt = activationResponse.token;
-                            resolve();
+                            resolve(self.core().syncContainers(activationResponse.token));
                             return;
                         });
                 }

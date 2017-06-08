@@ -8,6 +8,7 @@ import * as _ from "lodash";
 import * as platform from "platform";
 import * as CoreModel from "./CoreModel";
 import { Promise } from "es6-promise";
+import { T1CResponse } from "./CoreModel";
 
 export { CoreService };
 
@@ -16,6 +17,7 @@ const CORE_INFO = "/";
 const CORE_READERS = "/card-readers";
 const CORE_ACTIVATE = "/admin/activate";
 const CORE_PUB_KEY = "/admin/certificate";
+const CORE_CONTAINERS = "/admin/containers";
 
 class CoreService implements CoreModel.AbstractCore {
     // constructor
@@ -304,6 +306,10 @@ class CoreService implements CoreModel.AbstractCore {
                      callback?: (error: CoreExceptions.RestException, data: CoreModel.PubKeyResponse)
                          => void): void | Promise<CoreModel.PubKeyResponse> {
         return this.connection.put(this.url + CORE_PUB_KEY, { certificate: pubkey }, undefined, callback);
+    }
+
+    public syncContainers(jwt: string): Promise<T1CResponse> {
+        return this.connection.post(this.url + CORE_CONTAINERS, { jwt }, undefined);
     }
 
     // sync
