@@ -18264,7 +18264,6 @@ var GCLLib =
 	var platform = __webpack_require__(17);
 	var es6_promise_1 = __webpack_require__(18);
 	var CORE_INFO = "/";
-	var CORE_PLUGINS = "/plugins";
 	var CORE_READERS = "/card-readers";
 	var CORE_ACTIVATE = "/admin/activate";
 	var CORE_PUB_KEY = "/admin/certificate";
@@ -18294,6 +18293,22 @@ var GCLLib =
 	            success: true
 	        };
 	    };
+	    CoreService.successResponse = function (data, callback) {
+	        if (callback && typeof callback === "function") {
+	            return callback(null, data);
+	        }
+	        else {
+	            return es6_promise_1.Promise.resolve(data);
+	        }
+	    };
+	    CoreService.errorResponse = function (error, callback) {
+	        if (callback && typeof callback === "function") {
+	            return callback(error);
+	        }
+	        else {
+	            return es6_promise_1.Promise.reject(error);
+	        }
+	    };
 	    CoreService.prototype.activate = function (callback) {
 	        return this.connection.post(this.url + CORE_ACTIVATE, {}, undefined, callback);
 	    };
@@ -18311,8 +18326,12 @@ var GCLLib =
 	            return es6_promise_1.Promise.resolve(CoreService.platformInfo());
 	        }
 	    };
-	    CoreService.prototype.plugins = function (callback) {
-	        return this.connection.get(this.url + CORE_PLUGINS, undefined, callback);
+	    CoreService.prototype.containers = function (callback) {
+	        return this.connection.get(this.url + CORE_INFO, undefined).then(function (res) {
+	            return CoreService.successResponse({ data: res.data.containers, success: true }, callback);
+	        }, function (err) {
+	            return CoreService.errorResponse(err, callback);
+	        });
 	    };
 	    CoreService.prototype.pollCardInserted = function (secondsToPollCard, callback, connectReaderCb, insertCardCb, cardTimeoutCb) {
 	        var maxSeconds = secondsToPollCard || 30;

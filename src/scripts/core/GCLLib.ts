@@ -39,7 +39,7 @@ class GCLClient {
     private dsClient: DSClient;
     private ocvClient: OCVClient;
 
-    constructor(cfg: GCLConfig, automatic: boolean) {
+    constructor(cfg: GCLConfig, automatic?: boolean) {
         let self = this;
         // resolve config to singleton
         this.cfg = GCLClient.resolveConfig(cfg);
