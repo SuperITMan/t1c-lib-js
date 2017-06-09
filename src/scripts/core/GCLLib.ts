@@ -6,6 +6,8 @@
  */
 import * as CoreExceptions from "./exceptions/CoreExceptions";
 import * as _ from "lodash";
+import * as jwtDecode from "jwt-decode";
+
 
 import { GCLConfig } from "./GCLConfig";
 import { CardFactory } from "../plugins/smartcards/CardFactory";
@@ -14,7 +16,7 @@ import { LocalConnection, RemoteConnection, LocalAuthConnection, LocalTestConnec
 import { AbstractDSClient, DownloadLinkResponse, JWTResponse } from "./ds/DSClientModel";
 import { DSClient } from "./ds/DSClient";
 import { AbstractOCVClient, OCVClient } from "./ocv/OCVClient";
-import { InfoResponse } from "./service/CoreModel";
+import { InfoResponse, Container } from "./service/CoreModel";
 import { AbstractEidBE } from "../plugins/smartcards/eid/be/EidBeModel";
 import { AbstractEMV } from "../plugins/smartcards/emv/EMVModel";
 import { AbstractOcra } from "../plugins/smartcards/ocra/ocraModel";
@@ -76,9 +78,15 @@ class GCLClient {
         });
     }
 
+    public static initialize(cfg: GCLConfig): Promise<GCLClient>;
     public static initialize(cfg: GCLConfig,
-                             callback?: (error: CoreExceptions.RestException, client: GCLClient) => void): void | Promise<GCLClient> {
-        if (callback) {
+                             readyCallback: (error: CoreExceptions.RestException, client: GCLClient) => void,
+                             initializedCallback?: (error: CoreExceptions.RestException, client: GCLClient) => void): void;
+    public static initialize(cfg: GCLConfig,
+                             readyCallback?: (error: CoreExceptions.RestException, client: GCLClient) => void,
+                             initializedCallback?: (error: CoreExceptions.RestException,
+                                                    client: GCLClient) => void): void | Promise<GCLClient> {
+        if (readyCallback && typeof readyCallback === "function") {
             init();
         } else {
             return new Promise((resolve, reject) => {
@@ -88,20 +96,29 @@ class GCLClient {
 
         function init(resolve?: (data: any) => void, reject?: (error: any) => void) {
             let client = new GCLClient(cfg, true);
+            if (initializedCallback && typeof initializedCallback === "function") { initializedCallback(null, client); }
 
             client.initSecurityContext(function(err: CoreExceptions.RestException) {
                 if (err) {
                     console.log(JSON.stringify(err));
                     if (reject) { reject(err); }
-                    else { callback(err, null); }
+                    else { readyCallback(err, null); }
                 } else {
-                    client.registerAndActivate().then(() => {
-                        if (resolve) { resolve(client); }
-                        else { callback(null, client); }
-                    }, error => {
-                        if (reject) { reject(error); }
-                        else { callback(error, null); }
-                    });
+                    client.registerAndActivate()
+                          // container download in progress, check for completion
+                          .then(jwt => {
+                              return Promise.resolve({ jwt, client });
+                          })
+                          .then(client.checkForDownloadCompletion)
+                          // container download complete, we can return the client
+                          .then((res) => {
+                              console.log(res);
+                              if (resolve) { resolve(client); }
+                              else { readyCallback(null, client); }
+                          }, error => {
+                              if (reject) { reject(error); }
+                              else { readyCallback(error, null); }
+                          });
                 }
             });
         }
@@ -223,7 +240,8 @@ class GCLClient {
                                         reject(syncError);
                                         return;
                                     } else {
-                                        resolve(self.core().syncContainers(activationResponse.token));
+                                        // resolve(self.core().syncContainers(activationResponse.token));
+                                        resolve(activationResponse.token);
                                     }
                                 });
                             });
@@ -239,12 +257,83 @@ class GCLClient {
                                 return;
                             }
                             self_cfg.jwt = activationResponse.token;
-                            resolve(self.core().syncContainers(activationResponse.token));
+                            // resolve(self.core().syncContainers(activationResponse.token));
+                            resolve(activationResponse.token);
                             return;
                         });
                 }
             });
         });
+    }
+
+    private checkForDownloadCompletion(args: { jwt: string, client: GCLClient}) {
+        let numRetries = 0;
+        const maxRetries = 3;
+        return new Promise((resolve, reject) => {
+            // TODO actually check for completion
+            // parse JWT
+            if (!args.jwt) { reject("Missing JWT, not activated?"); }
+            else {
+                // get required containers
+                // let required = jwtDecode(jwt).containers;
+                let required = jwtDecode(args.jwt).plugins;
+
+                check(required, resolve, reject);
+            }
+        });
+
+        function check(required: Container[], resolve: (data: any) => void, reject: (data: any) => void) {
+            // check status for required containers
+            // get info
+            args.client.core().info().then(res => {
+                console.log(res);
+                let errored = _.filter(res.data.containers, ct => {
+                    return ct.status === "download_error";
+                });
+                let busy = _.filter(res.data.containers, ct => {
+                    return ct.status === "init" || ct.status === "downloading";
+                });
+
+                // check for errored containers
+                let containerError = _.find(errored, ct => {
+                    return !!_.find(required, reqContainer => {
+                        return reqContainer.name === ct.name;
+                    });
+                });
+                if (containerError) {
+                    // TODO improve retry mechanism
+                    if (numRetries < maxRetries) {
+                        args.client.core().syncContainers(args.jwt).then(() => {
+                            numRetries++;
+                            poll(required, resolve, reject);
+                        });
+                    } else {
+                        // max # of retries reached, return error
+                        reject("Error downloading one or more containers.");
+                    }
+                } else {
+                    // check for downloading containers
+                    let containerNotReady = _.find(busy, ct => {
+                        return !!_.find(required, reqContainer => {
+                            return reqContainer.name === ct.name;
+                        });
+                    });
+                    if (containerNotReady) {
+                        // downloads not yet complete, keep polling
+                        poll(required, resolve, reject);
+                    } else {
+                        // all containers ok, resolve promise
+                        resolve("download complete");
+                    }
+                }
+            });
+        }
+
+        function poll(required: Container[], resolve: (data: any) => void, reject: (data: any) => void) {
+            setTimeout(() => {
+                check(required, resolve, reject);
+            }, 1000);
+        }
     }
 
     // implicit download GCL instance when not found

@@ -6,7 +6,7 @@
 import * as CoreExceptions from "../exceptions/CoreExceptions";
 
 export { AbstractCore, T1CResponse, DataResponse, DataArrayResponse, DataObjectResponse, InfoResponse, BrowserInfoResponse,
-    Card, CardReader, CardReadersResponse, ContainersResponse, SingleReaderResponse, PluginsResponse, PubKeyResponse };
+    Card, CardReader, CardReadersResponse, Container, ContainersResponse, SingleReaderResponse, PluginsResponse, PubKeyResponse };
 
 
 interface AbstractCore {
@@ -81,6 +81,7 @@ interface InfoResponse extends T1CResponse {
         os: string
         uid: string
         version: string
+        containers: Container[]
     }
 }
 

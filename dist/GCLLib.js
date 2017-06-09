@@ -48,14 +48,15 @@ var GCLLib =
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var _ = __webpack_require__(1);
-	var GCLConfig_1 = __webpack_require__(3);
+	var jwtDecode = __webpack_require__(3);
+	var GCLConfig_1 = __webpack_require__(6);
 	exports.GCLConfig = GCLConfig_1.GCLConfig;
-	var CardFactory_1 = __webpack_require__(4);
-	var CoreService_1 = __webpack_require__(16);
-	var Connection_1 = __webpack_require__(21);
-	var DSClient_1 = __webpack_require__(47);
-	var OCVClient_1 = __webpack_require__(48);
-	var es6_promise_1 = __webpack_require__(18);
+	var CardFactory_1 = __webpack_require__(7);
+	var CoreService_1 = __webpack_require__(19);
+	var Connection_1 = __webpack_require__(24);
+	var DSClient_1 = __webpack_require__(50);
+	var OCVClient_1 = __webpack_require__(51);
+	var es6_promise_1 = __webpack_require__(21);
 	var GCLClient = (function () {
 	    function GCLClient(cfg, automatic) {
 	        var _this = this;
@@ -109,8 +110,8 @@ var GCLLib =
 	            }
 	        });
 	    }
-	    GCLClient.initialize = function (cfg, callback) {
-	        if (callback) {
+	    GCLClient.initialize = function (cfg, readyCallback, initializedCallback) {
+	        if (readyCallback && typeof readyCallback === "function") {
 	            init();
 	        }
 	        else {
@@ -120,6 +121,9 @@ var GCLLib =
 	        }
 	        function init(resolve, reject) {
 	            var client = new GCLClient(cfg, true);
+	            if (initializedCallback && typeof initializedCallback === "function") {
+	                initializedCallback(null, client);
+	            }
 	            client.initSecurityContext(function (err) {
 	                if (err) {
 	                    console.log(JSON.stringify(err));
@@ -127,23 +131,29 @@ var GCLLib =
 	                        reject(err);
 	                    }
 	                    else {
-	                        callback(err, null);
+	                        readyCallback(err, null);
 	                    }
 	                }
 	                else {
-	                    client.registerAndActivate().then(function () {
+	                    client.registerAndActivate()
+	                        .then(function (jwt) {
+	                        return es6_promise_1.Promise.resolve({ jwt: jwt, client: client });
+	                    })
+	                        .then(client.checkForDownloadCompletion)
+	                        .then(function (res) {
+	                        console.log(res);
 	                        if (resolve) {
 	                            resolve(client);
 	                        }
 	                        else {
-	                            callback(null, client);
+	                            readyCallback(null, client);
 	                        }
 	                    }, function (error) {
 	                        if (reject) {
 	                            reject(error);
 	                        }
 	                        else {
-	                            callback(error, null);
+	                            readyCallback(error, null);
 	                        }
 	                    });
 	                }
@@ -223,7 +233,7 @@ var GCLLib =
 	                                    return;
 	                                }
 	                                else {
-	                                    resolve();
+	                                    resolve(activationResponse.token);
 	                                }
 	                            });
 	                        });
@@ -237,12 +247,70 @@ var GCLLib =
 	                            return;
 	                        }
 	                        self_cfg.jwt = activationResponse.token;
-	                        resolve();
+	                        resolve(activationResponse.token);
 	                        return;
 	                    });
 	                }
 	            });
 	        });
+	    };
+	    GCLClient.prototype.checkForDownloadCompletion = function (args) {
+	        var numRetries = 0;
+	        var maxRetries = 3;
+	        return new es6_promise_1.Promise(function (resolve, reject) {
+	            if (!args.jwt) {
+	                reject("Missing JWT, not activated?");
+	            }
+	            else {
+	                var required = jwtDecode(args.jwt).plugins;
+	                check(required, resolve, reject);
+	            }
+	        });
+	        function check(required, resolve, reject) {
+	            args.client.core().info().then(function (res) {
+	                console.log(res);
+	                var errored = _.filter(res.data.containers, function (ct) {
+	                    return ct.status === "download_error";
+	                });
+	                var busy = _.filter(res.data.containers, function (ct) {
+	                    return ct.status === "init" || ct.status === "downloading";
+	                });
+	                var containerError = _.find(errored, function (ct) {
+	                    return !!_.find(required, function (reqContainer) {
+	                        return reqContainer.name === ct.name;
+	                    });
+	                });
+	                if (containerError) {
+	                    if (numRetries < maxRetries) {
+	                        args.client.core().syncContainers(args.jwt).then(function () {
+	                            numRetries++;
+	                            poll(required, resolve, reject);
+	                        });
+	                    }
+	                    else {
+	                        reject("Error downloading one or more containers.");
+	                    }
+	                }
+	                else {
+	                    var containerNotReady = _.find(busy, function (ct) {
+	                        return !!_.find(required, function (reqContainer) {
+	                            return reqContainer.name === ct.name;
+	                        });
+	                    });
+	                    if (containerNotReady) {
+	                        poll(required, resolve, reject);
+	                    }
+	                    else {
+	                        resolve("download complete");
+	                    }
+	                }
+	            });
+	        }
+	        function poll(required, resolve, reject) {
+	            setTimeout(function () {
+	                check(required, resolve, reject);
+	            }, 1000);
+	        }
 	    };
 	    GCLClient.prototype.implicitDownload = function () {
 	        var self = this;
@@ -17380,6 +17448,108 @@ var GCLLib =
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
+	var base64_url_decode = __webpack_require__(4);
+	
+	module.exports = function (token,options) {
+	  if (typeof token !== 'string') {
+	    throw new Error('Invalid token specified');
+	  }
+	
+	  options = options || {};
+	  var pos = options.header === true ? 0 : 1;
+	  return JSON.parse(base64_url_decode(token.split('.')[pos]));
+	};
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	var atob = __webpack_require__(5);
+	
+	function b64DecodeUnicode(str) {
+	  return decodeURIComponent(atob(str).replace(/(.)/g, function (m, p) {
+	    var code = p.charCodeAt(0).toString(16).toUpperCase();
+	    if (code.length < 2) {
+	      code = '0' + code;
+	    }
+	    return '%' + code;
+	  }));
+	}
+	
+	module.exports = function(str) {
+	  var output = str.replace(/-/g, "+").replace(/_/g, "/");
+	  switch (output.length % 4) {
+	    case 0:
+	      break;
+	    case 2:
+	      output += "==";
+	      break;
+	    case 3:
+	      output += "=";
+	      break;
+	    default:
+	      throw "Illegal base64url string!";
+	  }
+	
+	  try{
+	    return b64DecodeUnicode(output);
+	  } catch (err) {
+	    return atob(output);
+	  }
+	};
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+	/**
+	 * The code was extracted from:
+	 * https://github.com/davidchambers/Base64.js
+	 */
+	
+	var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+	
+	function InvalidCharacterError(message) {
+	  this.message = message;
+	}
+	
+	InvalidCharacterError.prototype = new Error();
+	InvalidCharacterError.prototype.name = 'InvalidCharacterError';
+	
+	function polyfill (input) {
+	  var str = String(input).replace(/=+$/, '');
+	  if (str.length % 4 == 1) {
+	    throw new InvalidCharacterError("'atob' failed: The string to be decoded is not correctly encoded.");
+	  }
+	  for (
+	    // initialize result and counters
+	    var bc = 0, bs, buffer, idx = 0, output = '';
+	    // get next character
+	    buffer = str.charAt(idx++);
+	    // character found in table? initialize bit storage and add its ascii value;
+	    ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
+	      // and if not first of each 4 characters,
+	      // convert the first 8 bits to one ascii character
+	      bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+	  ) {
+	    // try to find character in table (0-63, not found => -1)
+	    buffer = chars.indexOf(buffer);
+	  }
+	  return output;
+	}
+	
+	
+	module.exports = typeof window !== 'undefined' && window.atob && window.atob.bind(window) || polyfill;
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var _ = __webpack_require__(1);
@@ -17537,21 +17707,21 @@ var GCLLib =
 
 
 /***/ }),
-/* 4 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var EMV_1 = __webpack_require__(5);
-	var EidBe_1 = __webpack_require__(7);
-	var EidLux_1 = __webpack_require__(8);
-	var mobib_1 = __webpack_require__(9);
-	var LuxTrust_1 = __webpack_require__(10);
-	var ocra_1 = __webpack_require__(11);
-	var Aventra_1 = __webpack_require__(12);
-	var Oberthur_1 = __webpack_require__(13);
-	var piv_1 = __webpack_require__(14);
-	var dni_1 = __webpack_require__(15);
+	var EMV_1 = __webpack_require__(8);
+	var EidBe_1 = __webpack_require__(10);
+	var EidLux_1 = __webpack_require__(11);
+	var mobib_1 = __webpack_require__(12);
+	var LuxTrust_1 = __webpack_require__(13);
+	var ocra_1 = __webpack_require__(14);
+	var Aventra_1 = __webpack_require__(15);
+	var Oberthur_1 = __webpack_require__(16);
+	var piv_1 = __webpack_require__(17);
+	var dni_1 = __webpack_require__(18);
 	var CONTAINER_CONTEXT_PATH = "/plugins/";
 	var CONTAINER_NEW_CONTEXT_PATH = "/containers/";
 	var CONTAINER_BEID = CONTAINER_CONTEXT_PATH + "beid";
@@ -17587,7 +17757,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 5 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -17602,7 +17772,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var EMV_PAN = "/pan";
 	var EMV = (function (_super) {
 	    __extends(EMV, _super);
@@ -17618,7 +17788,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 6 */
+/* 9 */
 /***/ (function(module, exports) {
 
 	"use strict";
@@ -17783,7 +17953,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 7 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -17798,7 +17968,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var EidBe = (function (_super) {
 	    __extends(EidBe, _super);
 	    function EidBe() {
@@ -17845,7 +18015,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 8 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -17860,7 +18030,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	function createFilterQueryParam(filters, pin) {
 	    return { filter: filters.join(","), pin: pin };
 	}
@@ -17936,7 +18106,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 9 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -17951,7 +18121,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var MOBIB_CARD_ISSUING = "/card-issuing";
 	var MOBIB_CONTRACTS = "/contracts";
 	var MOBIB_PHOTO = "/picture";
@@ -17979,7 +18149,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 10 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -17994,7 +18164,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var LuxTrust = (function (_super) {
 	    __extends(LuxTrust, _super);
 	    function LuxTrust() {
@@ -18015,7 +18185,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 11 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -18030,7 +18200,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var Ocra = (function (_super) {
 	    __extends(Ocra, _super);
 	    function Ocra() {
@@ -18050,7 +18220,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 12 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -18065,7 +18235,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var Aventra = (function (_super) {
 	    __extends(Aventra, _super);
 	    function Aventra() {
@@ -18109,7 +18279,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 13 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -18124,7 +18294,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var Oberthur = (function (_super) {
 	    __extends(Oberthur, _super);
 	    function Oberthur() {
@@ -18164,7 +18334,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 14 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -18179,7 +18349,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var PIV = (function (_super) {
 	    __extends(PIV, _super);
 	    function PIV() {
@@ -18215,7 +18385,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 15 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -18230,7 +18400,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var Card_1 = __webpack_require__(6);
+	var Card_1 = __webpack_require__(9);
 	var DNI = (function (_super) {
 	    __extends(DNI, _super);
 	    function DNI() {
@@ -18255,18 +18425,19 @@ var GCLLib =
 
 
 /***/ }),
-/* 16 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var _ = __webpack_require__(1);
-	var platform = __webpack_require__(17);
-	var es6_promise_1 = __webpack_require__(18);
+	var platform = __webpack_require__(20);
+	var es6_promise_1 = __webpack_require__(21);
 	var CORE_INFO = "/";
 	var CORE_READERS = "/card-readers";
 	var CORE_ACTIVATE = "/admin/activate";
 	var CORE_PUB_KEY = "/admin/certificate";
+	var CORE_CONTAINERS = "/admin/containers";
 	var CoreService = (function () {
 	    function CoreService(url, connection) {
 	        this.url = url;
@@ -18518,6 +18689,9 @@ var GCLLib =
 	    CoreService.prototype.setPubKey = function (pubkey, callback) {
 	        return this.connection.put(this.url + CORE_PUB_KEY, { certificate: pubkey }, undefined, callback);
 	    };
+	    CoreService.prototype.syncContainers = function (jwt) {
+	        return this.connection.post(this.url + CORE_CONTAINERS, { jwt: jwt }, undefined);
+	    };
 	    CoreService.prototype.infoBrowserSync = function () { return CoreService.platformInfo(); };
 	    CoreService.prototype.getUrl = function () { return this.url; };
 	    CoreService.prototype.version = function () {
@@ -18529,7 +18703,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 17 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*!
@@ -19690,7 +19864,7 @@ var GCLLib =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module), (function() { return this; }())))
 
 /***/ }),
-/* 18 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var require;/* WEBPACK VAR INJECTION */(function(process, global) {/*!
@@ -19825,7 +19999,7 @@ var GCLLib =
 	function attemptVertx() {
 	  try {
 	    var r = require;
-	    var vertx = __webpack_require__(20);
+	    var vertx = __webpack_require__(23);
 	    vertxNext = vertx.runOnLoop || vertx.runOnContext;
 	    return useVertxTimer();
 	  } catch (e) {
@@ -20847,10 +21021,10 @@ var GCLLib =
 	
 	})));
 	//# sourceMappingURL=es6-promise.map
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(19), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(22), (function() { return this; }())))
 
 /***/ }),
-/* 19 */
+/* 22 */
 /***/ (function(module, exports) {
 
 	// shim for using process in browser
@@ -21036,13 +21210,13 @@ var GCLLib =
 
 
 /***/ }),
-/* 20 */
+/* 23 */
 /***/ (function(module, exports) {
 
 	/* (ignored) */
 
 /***/ }),
-/* 21 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -21057,7 +21231,7 @@ var GCLLib =
 	    };
 	})();
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var axios_1 = __webpack_require__(22);
+	var axios_1 = __webpack_require__(25);
 	var _ = __webpack_require__(1);
 	var GenericConnection = (function () {
 	    function GenericConnection(cfg) {
@@ -21205,21 +21379,21 @@ var GCLLib =
 
 
 /***/ }),
-/* 22 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(23);
+	module.exports = __webpack_require__(26);
 
 /***/ }),
-/* 23 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
-	var bind = __webpack_require__(25);
-	var Axios = __webpack_require__(26);
-	var defaults = __webpack_require__(27);
+	var utils = __webpack_require__(27);
+	var bind = __webpack_require__(28);
+	var Axios = __webpack_require__(29);
+	var defaults = __webpack_require__(30);
 	
 	/**
 	 * Create an instance of Axios
@@ -21252,15 +21426,15 @@ var GCLLib =
 	};
 	
 	// Expose Cancel & CancelToken
-	axios.Cancel = __webpack_require__(44);
-	axios.CancelToken = __webpack_require__(45);
-	axios.isCancel = __webpack_require__(41);
+	axios.Cancel = __webpack_require__(47);
+	axios.CancelToken = __webpack_require__(48);
+	axios.isCancel = __webpack_require__(44);
 	
 	// Expose all/spread
 	axios.all = function all(promises) {
 	  return Promise.all(promises);
 	};
-	axios.spread = __webpack_require__(46);
+	axios.spread = __webpack_require__(49);
 	
 	module.exports = axios;
 	
@@ -21269,12 +21443,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 24 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var bind = __webpack_require__(25);
+	var bind = __webpack_require__(28);
 	
 	/*global toString:true*/
 	
@@ -21574,7 +21748,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 25 */
+/* 28 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -21591,17 +21765,17 @@ var GCLLib =
 
 
 /***/ }),
-/* 26 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var defaults = __webpack_require__(27);
-	var utils = __webpack_require__(24);
-	var InterceptorManager = __webpack_require__(38);
-	var dispatchRequest = __webpack_require__(39);
-	var isAbsoluteURL = __webpack_require__(42);
-	var combineURLs = __webpack_require__(43);
+	var defaults = __webpack_require__(30);
+	var utils = __webpack_require__(27);
+	var InterceptorManager = __webpack_require__(41);
+	var dispatchRequest = __webpack_require__(42);
+	var isAbsoluteURL = __webpack_require__(45);
+	var combineURLs = __webpack_require__(46);
 	
 	/**
 	 * Create a new instance of Axios
@@ -21682,13 +21856,13 @@ var GCLLib =
 
 
 /***/ }),
-/* 27 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 	
-	var utils = __webpack_require__(24);
-	var normalizeHeaderName = __webpack_require__(28);
+	var utils = __webpack_require__(27);
+	var normalizeHeaderName = __webpack_require__(31);
 	
 	var PROTECTION_PREFIX = /^\)\]\}',?\n/;
 	var DEFAULT_CONTENT_TYPE = {
@@ -21705,10 +21879,10 @@ var GCLLib =
 	  var adapter;
 	  if (typeof XMLHttpRequest !== 'undefined') {
 	    // For browsers use XHR adapter
-	    adapter = __webpack_require__(29);
+	    adapter = __webpack_require__(32);
 	  } else if (typeof process !== 'undefined') {
 	    // For node use HTTP adapter
-	    adapter = __webpack_require__(29);
+	    adapter = __webpack_require__(32);
 	  }
 	  return adapter;
 	}
@@ -21779,15 +21953,15 @@ var GCLLib =
 	
 	module.exports = defaults;
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(19)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(22)))
 
 /***/ }),
-/* 28 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	module.exports = function normalizeHeaderName(headers, normalizedName) {
 	  utils.forEach(headers, function processHeader(value, name) {
@@ -21800,18 +21974,18 @@ var GCLLib =
 
 
 /***/ }),
-/* 29 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 	
-	var utils = __webpack_require__(24);
-	var settle = __webpack_require__(30);
-	var buildURL = __webpack_require__(33);
-	var parseHeaders = __webpack_require__(34);
-	var isURLSameOrigin = __webpack_require__(35);
-	var createError = __webpack_require__(31);
-	var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(36);
+	var utils = __webpack_require__(27);
+	var settle = __webpack_require__(33);
+	var buildURL = __webpack_require__(36);
+	var parseHeaders = __webpack_require__(37);
+	var isURLSameOrigin = __webpack_require__(38);
+	var createError = __webpack_require__(34);
+	var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(39);
 	
 	module.exports = function xhrAdapter(config) {
 	  return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -21907,7 +22081,7 @@ var GCLLib =
 	    // This is only done if running in a standard browser environment.
 	    // Specifically not if we're in a web worker, or react-native.
 	    if (utils.isStandardBrowserEnv()) {
-	      var cookies = __webpack_require__(37);
+	      var cookies = __webpack_require__(40);
 	
 	      // Add xsrf header
 	      var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
@@ -21981,15 +22155,15 @@ var GCLLib =
 	  });
 	};
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(19)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(22)))
 
 /***/ }),
-/* 30 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var createError = __webpack_require__(31);
+	var createError = __webpack_require__(34);
 	
 	/**
 	 * Resolve or reject a Promise based on response status.
@@ -22015,12 +22189,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 31 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var enhanceError = __webpack_require__(32);
+	var enhanceError = __webpack_require__(35);
 	
 	/**
 	 * Create an Error with the specified message, config, error code, and response.
@@ -22038,7 +22212,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 32 */
+/* 35 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22063,12 +22237,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 33 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	function encode(val) {
 	  return encodeURIComponent(val).
@@ -22137,12 +22311,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 34 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	/**
 	 * Parse headers into an object
@@ -22180,12 +22354,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 35 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	module.exports = (
 	  utils.isStandardBrowserEnv() ?
@@ -22254,7 +22428,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 36 */
+/* 39 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22296,12 +22470,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 37 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	module.exports = (
 	  utils.isStandardBrowserEnv() ?
@@ -22355,12 +22529,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 38 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	function InterceptorManager() {
 	  this.handlers = [];
@@ -22413,15 +22587,15 @@ var GCLLib =
 
 
 /***/ }),
-/* 39 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
-	var transformData = __webpack_require__(40);
-	var isCancel = __webpack_require__(41);
-	var defaults = __webpack_require__(27);
+	var utils = __webpack_require__(27);
+	var transformData = __webpack_require__(43);
+	var isCancel = __webpack_require__(44);
+	var defaults = __webpack_require__(30);
 	
 	/**
 	 * Throws a `Cancel` if cancellation has been requested.
@@ -22498,12 +22672,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 40 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var utils = __webpack_require__(24);
+	var utils = __webpack_require__(27);
 	
 	/**
 	 * Transform the data for a request or a response
@@ -22524,7 +22698,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 41 */
+/* 44 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22535,7 +22709,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 42 */
+/* 45 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22555,7 +22729,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 43 */
+/* 46 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22573,7 +22747,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 44 */
+/* 47 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22598,12 +22772,12 @@ var GCLLib =
 
 
 /***/ }),
-/* 45 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var Cancel = __webpack_require__(44);
+	var Cancel = __webpack_require__(47);
 	
 	/**
 	 * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -22661,7 +22835,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 46 */
+/* 49 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -22694,13 +22868,13 @@ var GCLLib =
 
 
 /***/ }),
-/* 47 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
 	var _ = __webpack_require__(1);
-	var es6_promise_1 = __webpack_require__(18);
+	var es6_promise_1 = __webpack_require__(21);
 	var SEPARATOR = "/";
 	var QP_APIKEY = "?apikey=";
 	var SECURITY = "/security";
@@ -22821,7 +22995,7 @@ var GCLLib =
 
 
 /***/ }),
-/* 48 */
+/* 51 */
 /***/ (function(module, exports) {
 
 	"use strict";
