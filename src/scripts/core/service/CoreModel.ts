@@ -16,6 +16,7 @@ interface AbstractCore {
     info(callback?: (error: CoreExceptions.RestException, data: InfoResponse) => void): void | Promise<InfoResponse>;
     infoBrowser(callback?: (error: CoreExceptions.RestException, data: BrowserInfoResponse) => void): void | Promise<BrowserInfoResponse>;
     containers(callback?: (error: CoreExceptions.RestException, data: ContainersResponse) => void): void | Promise<ContainersResponse>;
+    plugins(callback?: (error: CoreExceptions.RestException, data: PluginsResponse) => void): void | Promise<PluginsResponse>;
     pollCardInserted(secondsToPollCard?: number,
                      callback?: (error: CoreExceptions.RestException, data: CardReader) => void,
                      connectReader?: () => void,

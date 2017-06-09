@@ -93,12 +93,12 @@ var GCLLib =
 	            this.implicitDownload();
 	        }
 	        if (!automatic) {
-	            this.initSecurityContext(function (err) {
-	                if (err) {
-	                    console.log(JSON.stringify(err));
-	                    return;
-	                }
-	                self.registerAndActivate();
+	            this.initSecurityContext()
+	                .then(function () { return es6_promise_1.Promise.resolve({ client: self }); })
+	                .then(self.registerAndActivate)
+	                .catch(function (err) {
+	                console.log(JSON.stringify(err));
+	                return;
 	            });
 	        }
 	        this.initOCVContext(function (err) {
@@ -124,38 +124,25 @@ var GCLLib =
 	            if (initializedCallback && typeof initializedCallback === "function") {
 	                initializedCallback(null, client);
 	            }
-	            client.initSecurityContext(function (err) {
-	                if (err) {
-	                    console.log(JSON.stringify(err));
-	                    if (reject) {
-	                        reject(err);
-	                    }
-	                    else {
-	                        readyCallback(err, null);
-	                    }
+	            client.initSecurityContext()
+	                .then(function () { return es6_promise_1.Promise.resolve({ client: client }); })
+	                .then(client.registerAndActivate)
+	                .then(function (jwt) { return es6_promise_1.Promise.resolve({ jwt: jwt, client: client }); })
+	                .then(client.containerSync)
+	                .then(function () {
+	                if (resolve) {
+	                    resolve(client);
 	                }
 	                else {
-	                    client.registerAndActivate()
-	                        .then(function (jwt) {
-	                        return es6_promise_1.Promise.resolve({ jwt: jwt, client: client });
-	                    })
-	                        .then(client.checkForDownloadCompletion)
-	                        .then(function (res) {
-	                        console.log(res);
-	                        if (resolve) {
-	                            resolve(client);
-	                        }
-	                        else {
-	                            readyCallback(null, client);
-	                        }
-	                    }, function (error) {
-	                        if (reject) {
-	                            reject(error);
-	                        }
-	                        else {
-	                            readyCallback(error, null);
-	                        }
-	                    });
+	                    readyCallback(null, client);
+	                }
+	            })
+	                .catch(function (error) {
+	                if (reject) {
+	                    reject(error);
+	                }
+	                else {
+	                    readyCallback(error, null);
 	                }
 	            });
 	        }
@@ -174,30 +161,23 @@ var GCLLib =
 	    GCLClient.prototype.initOCVContext = function (cb) {
 	        return this.ocvClient.getInfo(cb);
 	    };
-	    GCLClient.prototype.initSecurityContext = function (cb) {
+	    GCLClient.prototype.initSecurityContext = function () {
 	        var self = this;
-	        var clientCb = cb;
-	        this.core().getPubKey(function (err) {
-	            if (err && err.data && !err.data.success) {
-	                self.dsClient.getPubKey(function (error, dsResponse) {
-	                    if (err) {
-	                        return clientCb(err, null);
-	                    }
-	                    var innerCb = clientCb;
-	                    self.core().setPubKey(dsResponse.pubkey, function (pubKeyError) {
-	                        if (pubKeyError) {
-	                            return innerCb(err, null);
-	                        }
-	                        return innerCb(null, {});
-	                    });
+	        return new es6_promise_1.Promise(function (resolve, reject) {
+	            self.core().getPubKey().then(function (key) {
+	                resolve(key);
+	            }, function () {
+	                self.dsClient.getPubKey().then(function (dsResponse) {
+	                    resolve(self.core().setPubKey(dsResponse.pubkey));
+	                }, function (dsError) {
+	                    reject(dsError);
 	                });
-	            }
-	            return cb(null, {});
+	            });
 	        });
 	    };
-	    GCLClient.prototype.registerAndActivate = function () {
-	        var self = this;
-	        var self_cfg = this.cfg;
+	    GCLClient.prototype.registerAndActivate = function (args) {
+	        var self = args.client;
+	        var self_cfg = args.client.cfg;
 	        return new es6_promise_1.Promise(function (resolve, reject) {
 	            self.core().info(function (err, infoResponse) {
 	                if (err) {
@@ -254,7 +234,7 @@ var GCLLib =
 	            });
 	        });
 	    };
-	    GCLClient.prototype.checkForDownloadCompletion = function (args) {
+	    GCLClient.prototype.containerSync = function (args) {
 	        var numRetries = 0;
 	        var maxRetries = 3;
 	        return new es6_promise_1.Promise(function (resolve, reject) {
@@ -262,13 +242,21 @@ var GCLLib =
 	                reject("Missing JWT, not activated?");
 	            }
 	            else {
-	                var required = jwtDecode(args.jwt).plugins;
-	                check(required, resolve, reject);
+	                var required_1 = jwtDecode(args.jwt).plugins;
+	                args.client.core().containers().then(function (containers) {
+	                    if (containers.data) {
+	                        args.client.core().syncContainers(args.jwt).then(function () {
+	                            check(required_1, resolve, reject);
+	                        });
+	                    }
+	                    else {
+	                        resolve("Older GCL version without containers");
+	                    }
+	                });
 	            }
 	        });
 	        function check(required, resolve, reject) {
 	            args.client.core().info().then(function (res) {
-	                console.log(res);
 	                var errored = _.filter(res.data.containers, function (ct) {
 	                    return ct.status === "download_error";
 	                });
@@ -18435,6 +18423,7 @@ var GCLLib =
 	var es6_promise_1 = __webpack_require__(21);
 	var CORE_INFO = "/";
 	var CORE_READERS = "/card-readers";
+	var CORE_PLUGINS = "/plugins";
 	var CORE_ACTIVATE = "/admin/activate";
 	var CORE_PUB_KEY = "/admin/certificate";
 	var CORE_CONTAINERS = "/admin/containers";
@@ -18503,6 +18492,9 @@ var GCLLib =
 	        }, function (err) {
 	            return CoreService.errorResponse(err, callback);
 	        });
+	    };
+	    CoreService.prototype.plugins = function (callback) {
+	        return this.connection.get(this.url + CORE_PLUGINS, undefined, callback);
 	    };
 	    CoreService.prototype.pollCardInserted = function (secondsToPollCard, callback, connectReaderCb, insertCardCb, cardTimeoutCb) {
 	        var maxSeconds = secondsToPollCard || 30;
@@ -22908,25 +22900,22 @@ var GCLLib =
 	            });
 	        }
 	        function doGetJwt(resolve, reject) {
-	            self.connection.get(self.url + SECURITY_JWT_ISSUE, undefined, function (error, data) {
-	                if (error) {
-	                    if (callback) {
-	                        return callback(error, null);
-	                    }
-	                    else {
-	                        reject(error);
-	                    }
+	            self.connection.get(self.url + SECURITY_JWT_ISSUE, undefined).then(function (data) {
+	                if (data && data.token) {
+	                    self.cfg.jwt = data.token;
+	                }
+	                if (callback) {
+	                    return callback(null, data);
 	                }
 	                else {
-	                    if (data && data.token) {
-	                        self.cfg.jwt = data.token;
-	                    }
-	                    if (callback) {
-	                        return callback(null, data);
-	                    }
-	                    else {
-	                        resolve(data);
-	                    }
+	                    resolve(data);
+	                }
+	            }, function (error) {
+	                if (callback) {
+	                    return callback(error, null);
+	                }
+	                else {
+	                    reject(error);
 	                }
 	            });
 	        }
@@ -22960,23 +22949,20 @@ var GCLLib =
 	            });
 	        }
 	        function doGetDownloadLink(resolve, reject) {
-	            self.connection.post(self.url + DOWNLOAD, infoBrowser, undefined, function (err, data) {
-	                if (err) {
-	                    if (callback) {
-	                        return callback(err, null);
-	                    }
-	                    else {
-	                        reject(err);
-	                    }
+	            self.connection.post(self.url + DOWNLOAD, infoBrowser, undefined).then(function (data) {
+	                var returnObject = { url: self.cfg.dsUrlBase + data.path + QP_APIKEY + self.cfg.apiKey };
+	                if (callback && typeof callback === "function") {
+	                    return callback(null, returnObject);
 	                }
 	                else {
-	                    var returnObject = { url: self.cfg.dsUrlBase + data.path + QP_APIKEY + self.cfg.apiKey };
-	                    if (callback) {
-	                        return callback(null, returnObject);
-	                    }
-	                    else {
-	                        return resolve(returnObject);
-	                    }
+	                    return resolve(returnObject);
+	                }
+	            }, function (err) {
+	                if (callback && typeof callback === "function") {
+	                    return callback(err, null);
+	                }
+	                else {
+	                    reject(err);
 	                }
 	            });
 	        }

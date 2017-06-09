@@ -61,13 +61,13 @@ class GCLClient {
 
         if (!automatic) {
             // setup security - fail safe
-            this.initSecurityContext(function(err: {}) {
-                if (err) {
+            this.initSecurityContext()
+                .then(() => { return Promise.resolve( { client: self }); })
+                .then(self.registerAndActivate)
+                .catch(err => {
                     console.log(JSON.stringify(err));
                     return;
-                }
-                self.registerAndActivate();
-            });
+                });
         }
 
         // verify OCV accessibility
@@ -98,29 +98,19 @@ class GCLClient {
             let client = new GCLClient(cfg, true);
             if (initializedCallback && typeof initializedCallback === "function") { initializedCallback(null, client); }
 
-            client.initSecurityContext(function(err: CoreExceptions.RestException) {
-                if (err) {
-                    console.log(JSON.stringify(err));
-                    if (reject) { reject(err); }
-                    else { readyCallback(err, null); }
-                } else {
-                    client.registerAndActivate()
-                          // container download in progress, check for completion
-                          .then(jwt => {
-                              return Promise.resolve({ jwt, client });
-                          })
-                          .then(client.checkForDownloadCompletion)
-                          // container download complete, we can return the client
-                          .then((res) => {
-                              console.log(res);
-                              if (resolve) { resolve(client); }
-                              else { readyCallback(null, client); }
-                          }, error => {
-                              if (reject) { reject(error); }
-                              else { readyCallback(error, null); }
-                          });
-                }
-            });
+            client.initSecurityContext()
+                  .then(() => { return Promise.resolve({ client }); })
+                  .then(client.registerAndActivate)
+                  .then(jwt => { return Promise.resolve({ jwt, client }); })
+                  .then(client.containerSync)
+                  .then(() => {
+                      if (resolve) { resolve(client); }
+                      else { readyCallback(null, client); }
+                  })
+                  .catch(error => {
+                      if (reject) { reject(error); }
+                      else { readyCallback(error, null); }
+                  });
         }
     }
 
@@ -176,30 +166,24 @@ class GCLClient {
     /**
      * Init security context
      */
-    private initSecurityContext(cb: (error: CoreExceptions.RestException, data: {}) => void) {
+    private initSecurityContext() {
         let self = this;
-        let clientCb = cb;
-        this.core().getPubKey(function(err: any) {
-            if (err && err.data && !err.data.success) {
-                // console.log('no certificate set - retrieve cert from DS');
-                self.dsClient.getPubKey(function(error: any, dsResponse: any) {
-                    if (err) { return clientCb(err, null); }
-                    let innerCb = clientCb;
-
-                    self.core().setPubKey(dsResponse.pubkey, function(pubKeyError: CoreExceptions.RestException) {
-                        if (pubKeyError) { return innerCb(err, null); }
-                        return innerCb(null, {});
-                    });
+        return new Promise((resolve, reject) => {
+            self.core().getPubKey().then(key => {
+                resolve(key);
+            }, () => {
+                self.dsClient.getPubKey().then(dsResponse => {
+                    resolve(self.core().setPubKey(dsResponse.pubkey));
+                }, dsError => {
+                    reject(dsError);
                 });
-            }
-            // certificate loaded
-            return cb(null, {});
+            });
         });
     }
 
-    private registerAndActivate() {
-        let self = this;
-        let self_cfg = this.cfg;
+    private registerAndActivate(args: { client: GCLClient}) {
+        let self = args.client;
+        let self_cfg = args.client.cfg;
         return new Promise((resolve, reject) => {
             // get GCL info
             self.core().info(function(err: CoreExceptions.RestException, infoResponse: InfoResponse) {
@@ -240,7 +224,6 @@ class GCLClient {
                                         reject(syncError);
                                         return;
                                     } else {
-                                        // resolve(self.core().syncContainers(activationResponse.token));
                                         resolve(activationResponse.token);
                                     }
                                 });
@@ -257,7 +240,6 @@ class GCLClient {
                                 return;
                             }
                             self_cfg.jwt = activationResponse.token;
-                            // resolve(self.core().syncContainers(activationResponse.token));
                             resolve(activationResponse.token);
                             return;
                         });
@@ -266,11 +248,10 @@ class GCLClient {
         });
     }
 
-    private checkForDownloadCompletion(args: { jwt: string, client: GCLClient}) {
+    private containerSync(args: { jwt: string, client: GCLClient}) {
         let numRetries = 0;
         const maxRetries = 3;
         return new Promise((resolve, reject) => {
-            // TODO actually check for completion
             // parse JWT
             if (!args.jwt) { reject("Missing JWT, not activated?"); }
             else {
@@ -278,7 +259,14 @@ class GCLClient {
                 // let required = jwtDecode(jwt).containers;
                 let required = jwtDecode(args.jwt).plugins;
 
-                check(required, resolve, reject);
+                // TODO MAINTAIN BACKWARD COMPATIBILITY WITH GCL < V2
+                args.client.core().containers().then(containers => {
+                    if (containers.data) {
+                        args.client.core().syncContainers(args.jwt).then(() => {
+                            check(required, resolve, reject);
+                        });
+                    } else { resolve("Older GCL version without containers"); }
+                });
             }
         });
 
@@ -286,7 +274,6 @@ class GCLClient {
             // check status for required containers
             // get info
             args.client.core().info().then(res => {
-                console.log(res);
                 let errored = _.filter(res.data.containers, ct => {
                     return ct.status === "download_error";
                 });

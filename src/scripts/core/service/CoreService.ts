@@ -15,6 +15,7 @@ export { CoreService };
 
 const CORE_INFO = "/";
 const CORE_READERS = "/card-readers";
+const CORE_PLUGINS = "/plugins";
 const CORE_ACTIVATE = "/admin/activate";
 const CORE_PUB_KEY = "/admin/certificate";
 const CORE_CONTAINERS = "/admin/containers";
@@ -90,11 +91,20 @@ class CoreService implements CoreModel.AbstractCore {
     public containers(callback: (error: CoreExceptions.RestException, data: CoreModel.ContainersResponse) => void): void;
     public containers(callback?: (error: CoreExceptions.RestException, data: CoreModel.ContainersResponse)
         => void): Promise<CoreModel.ContainersResponse> | void {
+        // TODO version check? Only available in versions > v2.0.0
         return this.connection.get(this.url + CORE_INFO, undefined).then(res => {
             return CoreService.successResponse({ data: res.data.containers, success: true }, callback);
         }, err => {
             return CoreService.errorResponse(err, callback);
         });
+    }
+
+    public plugins(): Promise<CoreModel.PluginsResponse>;
+    public plugins(callback: (error: CoreExceptions.RestException, data: CoreModel.PluginsResponse) => void): void;
+    public plugins(callback?: (error: CoreExceptions.RestException, data: CoreModel.PluginsResponse)
+        => void): void | Promise<CoreModel.PluginsResponse> {
+        // TODO version check? Only available in versions < v2.0.0
+        return this.connection.get(this.url + CORE_PLUGINS, undefined, callback);
     }
 
     public pollCardInserted(secondsToPollCard: number): Promise<CoreModel.CardReader>;
