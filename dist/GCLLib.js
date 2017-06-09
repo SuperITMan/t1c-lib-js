@@ -179,12 +179,7 @@ var GCLLib =
 	        var self = args.client;
 	        var self_cfg = args.client.cfg;
 	        return new es6_promise_1.Promise(function (resolve, reject) {
-	            self.core().info(function (err, infoResponse) {
-	                if (err) {
-	                    console.log(JSON.stringify(err));
-	                    reject(err);
-	                    return;
-	                }
+	            self.core().info().then(function (infoResponse) {
 	                var activated = infoResponse.data.activated;
 	                var managed = infoResponse.data.managed;
 	                var core_version = infoResponse.data.version;
@@ -192,45 +187,43 @@ var GCLLib =
 	                var info = self.core().infoBrowserSync();
 	                var mergedInfo = _.merge({ managed: managed, core_version: core_version, activated: activated }, info.data);
 	                if (!activated) {
-	                    self.dsClient.register(mergedInfo, uuid, function (error, activationResponse) {
-	                        if (err) {
-	                            console.log("Error while registering the device: " + JSON.stringify(err));
-	                            reject(err);
-	                            return;
-	                        }
+	                    self.dsClient.register(mergedInfo, uuid).then(function (activationResponse) {
 	                        self_cfg.jwt = activationResponse.token;
-	                        self.core().activate(function (activationError) {
-	                            if (activationError) {
-	                                console.log(JSON.stringify(err));
-	                                reject(err);
-	                                return;
-	                            }
+	                        self.core().activate().then(function () {
 	                            mergedInfo.activated = true;
-	                            self.dsClient.sync(mergedInfo, uuid, function (syncError) {
-	                                if (syncError) {
-	                                    console.log("Error while syncing the device: " + JSON.stringify(syncError));
-	                                    reject(syncError);
-	                                    return;
-	                                }
-	                                else {
-	                                    resolve(activationResponse.token);
-	                                }
+	                            self.dsClient.sync(mergedInfo, uuid).then(function () {
+	                                resolve(activationResponse.token);
+	                            }, function (syncError) {
+	                                console.log("Error while syncing the device: " + JSON.stringify(syncError));
+	                                reject(syncError);
+	                                return;
 	                            });
-	                        });
-	                    });
-	                }
-	                else {
-	                    self.dsClient.sync(mergedInfo, uuid, function (syncError, activationResponse) {
-	                        if (syncError) {
-	                            console.log("Error while syncing the device: " + JSON.stringify(syncError));
-	                            reject(syncError);
+	                        }, function (error) {
+	                            console.log(JSON.stringify(error));
+	                            reject(error);
 	                            return;
-	                        }
-	                        self_cfg.jwt = activationResponse.token;
-	                        resolve(activationResponse.token);
+	                        });
+	                    }, function (error) {
+	                        console.log("Error while registering the device: " + JSON.stringify(error));
+	                        reject(error);
 	                        return;
 	                    });
 	                }
+	                else {
+	                    self.dsClient.sync(mergedInfo, uuid).then(function (activationResponse) {
+	                        self_cfg.jwt = activationResponse.token;
+	                        resolve(activationResponse.token);
+	                        return;
+	                    }, function (syncError) {
+	                        console.log("Error while syncing the device: " + JSON.stringify(syncError));
+	                        reject(syncError);
+	                        return;
+	                    });
+	                }
+	            }, function (err) {
+	                console.log(JSON.stringify(err));
+	                reject(err);
+	                return;
 	            });
 	        });
 	    };

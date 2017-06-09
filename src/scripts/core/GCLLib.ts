@@ -186,12 +186,7 @@ class GCLClient {
         let self_cfg = args.client.cfg;
         return new Promise((resolve, reject) => {
             // get GCL info
-            self.core().info(function(err: CoreExceptions.RestException, infoResponse: InfoResponse) {
-                if (err) {
-                    console.log(JSON.stringify(err));
-                    reject(err);
-                    return;
-                }
+            self.core().info().then(infoResponse => {
                 let activated = infoResponse.data.activated;
                 let managed = infoResponse.data.managed;
                 let core_version = infoResponse.data.version;
@@ -202,48 +197,45 @@ class GCLClient {
                 if (!activated) {
                     // we need to register the device
                     // console.log("Register device:"+uuid);
-                    self.dsClient.register(mergedInfo, uuid,
-                        function(error: CoreExceptions.RestException, activationResponse: JWTResponse) {
-                            if (err) {
-                                console.log("Error while registering the device: " + JSON.stringify(err));
-                                reject(err);
-                                return;
-                            }
-                            self_cfg.jwt = activationResponse.token;
-                            self.core().activate(function(activationError: CoreExceptions.RestException) {
-                                if (activationError) {
-                                    console.log(JSON.stringify(err));
-                                    reject(err);
-                                    return;
-                                }
-                                // sync
-                                mergedInfo.activated = true;
-                                self.dsClient.sync(mergedInfo, uuid, function(syncError: CoreExceptions.RestException) {
-                                    if (syncError) {
-                                        console.log("Error while syncing the device: " + JSON.stringify(syncError));
-                                        reject(syncError);
-                                        return;
-                                    } else {
-                                        resolve(activationResponse.token);
-                                    }
-                                });
-                            });
-                        });
-                } else {
-                    // we need to synchronize the device
-                    // console.log("Sync device:"+uuid);
-                    self.dsClient.sync(mergedInfo, uuid,
-                        function(syncError: CoreExceptions.RestException, activationResponse: JWTResponse) {
-                            if (syncError) {
+                    self.dsClient.register(mergedInfo, uuid).then((activationResponse: JWTResponse) => {
+                        self_cfg.jwt = activationResponse.token;
+                        self.core().activate().then(() => {
+                            // sync
+                            mergedInfo.activated = true;
+                            self.dsClient.sync(mergedInfo, uuid).then(() => {
+                                resolve(activationResponse.token);
+                            }, (syncError: CoreExceptions.RestException) => {
                                 console.log("Error while syncing the device: " + JSON.stringify(syncError));
                                 reject(syncError);
                                 return;
-                            }
-                            self_cfg.jwt = activationResponse.token;
-                            resolve(activationResponse.token);
+                            });
+                        }, (error: CoreExceptions.RestException) => {
+                            console.log(JSON.stringify(error));
+                            reject(error);
                             return;
                         });
+                    }, (error: CoreExceptions.RestException) => {
+                        console.log("Error while registering the device: " + JSON.stringify(error));
+                        reject(error);
+                        return;
+                    });
+                } else {
+                    // we need to synchronize the device
+                    // console.log("Sync device:"+uuid);
+                    self.dsClient.sync(mergedInfo, uuid).then(activationResponse => {
+                        self_cfg.jwt = activationResponse.token;
+                        resolve(activationResponse.token);
+                        return;
+                    }, syncError => {
+                        console.log("Error while syncing the device: " + JSON.stringify(syncError));
+                        reject(syncError);
+                        return;
+                    });
                 }
+            }, err => {
+                console.log(JSON.stringify(err));
+                reject(err);
+                return;
             });
         });
     }
