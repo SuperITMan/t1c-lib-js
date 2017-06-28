@@ -332,7 +332,7 @@
 
     });
 
-    var safenet = connector.safenet({ mac: '/Users/maarten/Desktop/libeToken.dylib'});
+    var safenet = connector.safenet();
 
     // SafeNet PKCS11 functionality
     $("#safenetCerts").on('click', function () {
