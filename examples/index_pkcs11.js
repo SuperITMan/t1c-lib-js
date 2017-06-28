@@ -332,10 +332,11 @@
 
     });
 
+    var safenet = connector.safenet({ mac: '/Users/maarten/Desktop/libeToken.dylib'});
+
     // SafeNet PKCS11 functionality
     $("#safenetCerts").on('click', function () {
         $("#information").empty();
-        var safenet = connector.safenet();
         var body = {
             slot_id: parseInt($("#safenetSlot").val()),
             pin: $("#safenetPin").val()
@@ -344,7 +345,6 @@
     });
     $("#safenetInfo").on('click', function () {
         $("#information").empty();
-        var safenet = connector.safenet();
         var body = {
             pin: $("#safenetPin").val()
         };
@@ -352,7 +352,6 @@
     });
     $("#safenetSlots").on('click', function () {
         $("#information").empty();
-        var safenet = connector.safenet();
         var body = {
             pin: $("#safenetPin").val()
         };
@@ -360,7 +359,6 @@
     });
     $("#safenetSlotsWithToken").on('click', function () {
         $("#information").empty();
-        var safenet = connector.safenet();
         var body = {
             pin: $("#safenetPin").val()
         };

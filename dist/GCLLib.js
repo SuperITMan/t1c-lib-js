@@ -73,7 +73,7 @@ var GCLLib =
 	        this.aventra = function (reader_id) { return _this.pluginFactory.createAventraNO(reader_id); };
 	        this.oberthur = function (reader_id) { return _this.pluginFactory.createOberthurNO(reader_id); };
 	        this.piv = function (reader_id) { return _this.pluginFactory.createPIV(reader_id); };
-	        this.safenet = function (reader_id, moduleConfig) {
+	        this.safenet = function (moduleConfig) {
 	            return _this.pluginFactory.createSafeNet(moduleConfig);
 	        };
 	        var self = this;
