@@ -9,7 +9,6 @@ import * as _ from "lodash";
 import { BrowserInfo } from "../service/CoreModel";
 import { AbstractDSClient, DeviceResponse, DownloadLinkResponse,
     DSInfoResponse, DSPlatformInfo, DSPubKeyResponse, JWTResponse } from "./DSClientModel";
-import { Promise } from "es6-promise";
 
 export { DSClient };
 

@@ -1,6 +1,8 @@
 var webpack = require("webpack"),
     path = require("path");
 
+var nodeModulesPath = path.resolve(__dirname, 'node_modules');
+
 var libraryName = 'GCLLib',
     plugins = [ new webpack.optimize.UglifyJsPlugin({
         minimize: true,
@@ -15,7 +17,7 @@ var libraryName = 'GCLLib',
     outputFile = libraryName + ".min.js";
 
 var config = {
-    entry: "./src/scripts/core/GCLLib.ts",
+    entry: [ "babel-polyfill", "./src/scripts/core/GCLLib.ts" ],
     devtool: "source-map",
     output: {
         path: path.resolve(__dirname, "dist"),
@@ -27,10 +29,18 @@ var config = {
             { test: /\.tsx?$/, loader: "tslint", exclude: /node_modules/ }
         ],
         loaders: [
+            // ts-loader: convert typescript (es6) to javascript (es6),
+            // babel-loader: converts javascript (es6) to javascript (es5)
             {
-                test: /\.tsx?$/,
-                exclude: /node_modules/,
-                loader: "ts-loader"
+                'test': /\.tsx?$/,
+                'loaders': ['babel-loader','ts-loader'],
+                'exclude': [/node_modules/, nodeModulesPath]
+            },
+            // babel-loader for pure javascript (es6) => javascript (es5)
+            {
+                'test': /\.(jsx?)$/,
+                'loaders': ['babel'],
+                'exclude': [/node_modules/,nodeModulesPath]
             }
         ]
     },

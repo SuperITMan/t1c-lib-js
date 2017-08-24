@@ -1,9 +1,7 @@
 /**
  * @author Maarten Somers
  */
-
 import { GenericConnection } from "../core/client/Connection";
-import { Promise } from "es6-promise";
 export { PinEnforcer };
 
 const CORE_READERS = "/card-readers";

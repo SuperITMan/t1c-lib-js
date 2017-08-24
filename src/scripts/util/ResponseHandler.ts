@@ -3,7 +3,6 @@
  */
 import { RestException } from "../core/exceptions/CoreExceptions";
 import { T1CResponse } from "../core/service/CoreModel";
-import { Promise } from "es6-promise";
 
 export { ResponseHandler };
 

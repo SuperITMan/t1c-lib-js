@@ -5,11 +5,9 @@
  * @since 2016
  */
 ///<reference path="../../../../typings/index.d.ts"/>
-
 import {GCLConfig} from "../GCLConfig";
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import * as _ from "lodash";
-import { Promise } from "es6-promise";
 
 export { GenericConnection, LocalConnection, LocalAuthConnection, RemoteConnection, Connection, LocalTestConnection };
 

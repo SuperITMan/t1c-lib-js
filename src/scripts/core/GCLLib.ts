@@ -24,7 +24,6 @@ import { AbstractPiv } from "../plugins/smartcards/piv/pivModel";
 import { AbstractMobib } from "../plugins/smartcards/mobib/mobibModel";
 import { AbstractEidLUX } from "../plugins/smartcards/eid/lux/EidLuxModel";
 import { AbstractDNIe } from "../plugins/smartcards/eid/esp/dnieModel";
-import { Promise } from "es6-promise";
 import { PluginFactory } from "../plugins/PluginFactory";
 import { AbstractSafeNet } from "../plugins/smartcards/pkcs11/safenet/safenetModel";
 import { AuthenticateOrSignData, OptionalPin } from "../plugins/smartcards/Card";
