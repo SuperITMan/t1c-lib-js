@@ -79,3 +79,6 @@ fabric.properties
 
 # Test Reports
 /reports/
+
+# subdirectories of the dist folder
+dist/**/
