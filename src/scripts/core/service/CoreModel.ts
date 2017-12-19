@@ -4,6 +4,8 @@
  */
 
 import * as CoreExceptions from '../exceptions/CoreExceptions';
+import { Promise } from 'es6-promise';
+import Certificate from 'pkijs/src/Certificate';
 
 export { AbstractCore, T1CResponse, BoolDataResponse, DataResponse, DataArrayResponse, DataObjectResponse,
     InfoResponse, BrowserInfo, BrowserInfoResponse, Card, CardReader, CardReadersResponse, T1CCertificate,
@@ -131,7 +133,7 @@ interface CertificatesResponse extends T1CResponse {
 
 interface T1CCertificate {
     base64: string,
-    parsed?: object
+    parsed?: Certificate
 }
 
 interface SingleReaderResponse extends T1CResponse {

@@ -2,9 +2,10 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../core/exceptions/CoreExceptions";
-import { GenericSecuredCertCard, OptionalPin } from "../Card";
-import { CertificateResponse, DataObjectResponse } from "../../../core/service/CoreModel";
+import { RestException } from '../../../core/exceptions/CoreExceptions';
+import { GenericSecuredCertCard, OptionalPin } from '../Card';
+import { CertificateResponse, DataObjectResponse } from '../../../core/service/CoreModel';
+import { Promise } from 'es6-promise';
 
 export { AbstractPiv, AllCertsResponse, AllDataResponse, PrintedInformation, PrintedInformationResponse, FacialImage, FacialImageResponse };
 

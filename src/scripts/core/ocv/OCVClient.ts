@@ -2,20 +2,21 @@
  * @author Michallis Pashidis
  * @author Maarten Somers
  */
-import { RemoteConnection } from "../client/Connection";
-import { RestException } from "../exceptions/CoreExceptions";
+import { RemoteConnection } from '../client/Connection';
+import { RestException } from '../exceptions/CoreExceptions';
 import {
     AbstractOCVClient, CertificateChainData, CertificateChainResponse, ChallengeResponse, ChallengeSignedHashData,
     ChallengeSignedHashResponse, OCVInfoResponse, SignatureValidationData, SignatureValidationResponse
-} from "./OCVModel";
+} from './OCVModel';
+import { Promise } from 'es6-promise';
 
 export { AbstractOCVClient, OCVClient };
 
 
-const CHALLENGE = "/challenge";
-const CERTIFICATE = "/certs/validate-chain";
-const SYSTEM_STATUS = "/system/status";
-const SIGNATURE = "/signature/validate";
+const CHALLENGE = '/challenge';
+const CERTIFICATE = '/certs/validate-chain';
+const SYSTEM_STATUS = '/system/status';
+const SIGNATURE = '/signature/validate';
 
 
 class OCVClient implements AbstractOCVClient {

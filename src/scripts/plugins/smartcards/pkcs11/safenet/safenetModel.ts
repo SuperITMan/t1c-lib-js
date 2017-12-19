@@ -9,9 +9,11 @@ import {
 } from '../../../../core/service/CoreModel';
 import { Options } from '../../../../util/RequestHandler';
 import { AuthenticateOrSignData } from '../../Card';
+import { Promise } from 'es6-promise';
 
 export { AbstractSafeNet, InfoResponse, SafeNetCertificate, SafeNetCertificatesResponse,
     SafeNetSignData, Slot, SlotsResponse, TokenInfo, TokensResponse };
+
 
 interface AbstractSafeNet {
     certificates(slotId: number,

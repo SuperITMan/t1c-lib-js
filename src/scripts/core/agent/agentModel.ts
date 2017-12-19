@@ -3,15 +3,16 @@
  * @since 2017
  */
 
-import * as CoreExceptions from "../exceptions/CoreExceptions";
-import { T1CResponse } from "../service/CoreModel";
+import * as CoreExceptions from '../exceptions/CoreExceptions';
+import { T1CResponse } from '../service/CoreModel';
+import { Promise } from 'es6-promise';
 
-export { AbstractAgent, AgentResponse };
+export { AbstractAgent, AgentResponse, Agent };
 
 
 interface AbstractAgent {
     get(filters?: { [filterParam: string]: string },
-        callback?: (error: CoreExceptions.RestException, data: AgentResponse) => void): void | Promise<AgentResponse>;
+        callback?: (error: CoreExceptions.RestException, data: AgentResponse) => void): Promise<AgentResponse>;
 }
 
 interface AgentResponse extends T1CResponse {

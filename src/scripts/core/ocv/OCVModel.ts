@@ -3,7 +3,8 @@
  * @since 2017
  */
 
-import * as CoreExceptions from "../exceptions/CoreExceptions";
+import * as CoreExceptions from '../exceptions/CoreExceptions';
+import { Promise } from 'es6-promise';
 
 export { AbstractOCVClient, CertificateAndOrder, CertificateChainData, CertificateChainResponse,
     ChallengeResponse, ChallengeSignedHashResponse, ChallengeSignedHashData,

@@ -2,18 +2,19 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../core/exceptions/CoreExceptions";
-import { DataResponse } from "../../../core/service/CoreModel";
-import { AbstractMobib, CardIssuingResponse, ContractsResponse, StatusResponse } from "./mobibModel";
-import { GenericSmartCard } from "../Card";
+import { RestException } from '../../../core/exceptions/CoreExceptions';
+import { DataResponse } from '../../../core/service/CoreModel';
+import { AbstractMobib, CardIssuingResponse, ContractsResponse, StatusResponse } from './mobibModel';
+import { GenericSmartCard } from '../Card';
+import { Promise } from 'es6-promise';
 
 export { Mobib };
 
 
-const MOBIB_CARD_ISSUING = "/card-issuing";
-const MOBIB_CONTRACTS = "/contracts";
-const MOBIB_PHOTO = "/picture";
-const MOBIB_STATUS = "/status";
+const MOBIB_CARD_ISSUING = '/card-issuing';
+const MOBIB_CONTRACTS = '/contracts';
+const MOBIB_PHOTO = '/picture';
+const MOBIB_STATUS = '/status';
 
 class Mobib extends GenericSmartCard implements AbstractMobib {
 

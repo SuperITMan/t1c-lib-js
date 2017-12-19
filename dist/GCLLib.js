@@ -32245,14 +32245,14 @@ var GCLLib =
 	        this.connection = connection;
 	    }
 	    AgentClient.urlPrefix = function (port) {
-	        return AgentClient.AGENT_PATH + "/" + port;
+	        return AgentClient.AGENT_PATH + '/' + port;
 	    };
 	    AgentClient.prototype.get = function (filters, callback) {
 	        return this.connection.getSkipCitrix(this.url, AgentClient.AGENT_PATH, filters, callback);
 	    };
 	    return AgentClient;
 	}());
-	AgentClient.AGENT_PATH = "/agent";
+	AgentClient.AGENT_PATH = '/agent';
 	exports.AgentClient = AgentClient;
 
 
@@ -32823,10 +32823,10 @@ var GCLLib =
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
-	var CHALLENGE = "/challenge";
-	var CERTIFICATE = "/certs/validate-chain";
-	var SYSTEM_STATUS = "/system/status";
-	var SIGNATURE = "/signature/validate";
+	var CHALLENGE = '/challenge';
+	var CERTIFICATE = '/certs/validate-chain';
+	var SYSTEM_STATUS = '/system/status';
+	var SIGNATURE = '/signature/validate';
 	var OCVClient = (function () {
 	    function OCVClient(url, connection) {
 	        this.url = url;
@@ -77009,36 +77009,36 @@ var GCLLib =
 	    Belfius.generateStxApdu = function (data, prefix) {
 	        if (prefix && prefix.length) {
 	            return {
-	                cla: "F1",
-	                ins: "95",
-	                p1: "F7",
-	                p2: "E4",
+	                cla: 'F1',
+	                ins: '95',
+	                p1: 'F7',
+	                p2: 'E4',
 	                data: prefix + data
 	            };
 	        }
 	        else {
 	            return {
-	                cla: "F1",
-	                ins: "95",
-	                p1: "F7",
-	                p2: "E4",
-	                data: "00" + data
+	                cla: 'F1',
+	                ins: '95',
+	                p1: 'F7',
+	                p2: 'E4',
+	                data: '00' + data
 	            };
 	        }
 	    };
 	    Belfius.prototype.isBelfiusReader = function (sessionId, callback) {
 	        var _this = this;
 	        if (sessionId && sessionId.length) {
-	            return this.connection.get(this.baseUrl, "/card-readers/" + this.reader_id, undefined).then(function (reader) {
+	            return this.connection.get(this.baseUrl, '/card-readers/' + this.reader_id, undefined).then(function (reader) {
 	                return _this.apdu(Belfius.NONCE_APDU, sessionId).then(function (res) {
-	                    return ResponseHandler_1.ResponseHandler.response({ data: res.data.sw === "9000", success: true }, callback);
+	                    return ResponseHandler_1.ResponseHandler.response({ data: res.data.sw === '9000', success: true }, callback);
 	                });
 	            }, function (err) {
 	                return ResponseHandler_1.ResponseHandler.error(err, callback);
 	            });
 	        }
 	        else {
-	            return ResponseHandler_1.ResponseHandler.error({ status: 400, description: "Session ID is required!", code: "402" }, callback);
+	            return ResponseHandler_1.ResponseHandler.error({ status: 400, description: 'Session ID is required!', code: '402' }, callback);
 	        }
 	    };
 	    Belfius.prototype.nonce = function (sessionId, callback) {
@@ -77049,7 +77049,7 @@ var GCLLib =
 	            }
 	            else {
 	                return ResponseHandler_1.ResponseHandler.error({ status: 400,
-	                    description: "Reader is not compatible with this request.", code: "2" }, callback);
+	                    description: 'Reader is not compatible with this request.', code: '2' }, callback);
 	            }
 	        });
 	    };
@@ -77066,7 +77066,7 @@ var GCLLib =
 	                        commandStringArray.push(command.substr(i * 500, 500));
 	                    }
 	                    return _this.apdu(_this.generateStxApdus(commandStringArray), sessionId).then(function (res) {
-	                        var totalRx = "";
+	                        var totalRx = '';
 	                        _.forEach(res.data, function (partialRes) {
 	                            if (partialRes.rx) {
 	                                totalRx += partialRes.rx;
@@ -77076,7 +77076,7 @@ var GCLLib =
 	                            data: { tx: res.data[res.data.length - 1].tx, sw: res.data[res.data.length - 1].sw },
 	                            success: res.success
 	                        };
-	                        if (finalResponse.data.sw === "9000" && totalRx.length > 0) {
+	                        if (finalResponse.data.sw === '9000' && totalRx.length > 0) {
 	                            finalResponse.data.rx = totalRx;
 	                        }
 	                        return ResponseHandler_1.ResponseHandler.response(finalResponse, callback);
@@ -77085,7 +77085,7 @@ var GCLLib =
 	            }
 	            else {
 	                return ResponseHandler_1.ResponseHandler.error({ status: 400,
-	                    description: "Reader is not compatible with this request.", code: "2" }, callback);
+	                    description: 'Reader is not compatible with this request.', code: '2' }, callback);
 	            }
 	        });
 	    };
@@ -77094,13 +77094,13 @@ var GCLLib =
 	        var totalCommands = commands.length - 1;
 	        _.forEach(commands, function (cmd, idx) {
 	            if (idx === 0) {
-	                apduArray.push(Belfius.generateStxApdu(cmd, "01"));
+	                apduArray.push(Belfius.generateStxApdu(cmd, '01'));
 	            }
 	            else if (idx === totalCommands) {
-	                apduArray.push(Belfius.generateStxApdu(cmd, "02"));
+	                apduArray.push(Belfius.generateStxApdu(cmd, '02'));
 	            }
 	            else {
-	                apduArray.push(Belfius.generateStxApdu(cmd, "03"));
+	                apduArray.push(Belfius.generateStxApdu(cmd, '03'));
 	            }
 	        });
 	        return apduArray;
@@ -77108,11 +77108,11 @@ var GCLLib =
 	    return Belfius;
 	}(RemoteLoading_1.RemoteLoading));
 	Belfius.NONCE_APDU = {
-	    cla: "F1",
-	    ins: "95",
-	    p1: "F7",
-	    p2: "E4",
-	    data: "FE0000040001300000"
+	    cla: 'F1',
+	    ins: '95',
+	    p1: 'F7',
+	    p2: 'E4',
+	    data: 'FE0000040001300000'
 	};
 	exports.Belfius = Belfius;
 
@@ -77277,10 +77277,10 @@ var GCLLib =
 	            }
 	            else {
 	                if (args.readerId && args.readerId.length) {
-	                    reject("No card found for this ID");
+	                    reject('No card found for this ID');
 	                }
 	                else {
-	                    reject("Reader ID is required.");
+	                    reject('Reader ID is required.');
 	                }
 	            }
 	        });
@@ -77293,12 +77293,12 @@ var GCLLib =
 	                        resolve(args);
 	                    }
 	                    else {
-	                        reject("Container for this card is not available");
+	                        reject('Container for this card is not available');
 	                    }
 	                });
 	            }
 	            else {
-	                reject("Unknown card type");
+	                reject('Unknown card type');
 	            }
 	        });
 	    };
@@ -77308,7 +77308,7 @@ var GCLLib =
 	                args.data.algorithm_reference = CardUtil_1.CardUtil.defaultAlgo(args.container);
 	            }
 	            if (!args.data.algorithm_reference) {
-	                reject("No algorithm reference provided and cannot determine default algorithm");
+	                reject('No algorithm reference provided and cannot determine default algorithm');
 	            }
 	            else {
 	                resolve(args);
@@ -77321,7 +77321,7 @@ var GCLLib =
 	                resolve(CardUtil_1.CardUtil.determineContainer(reader.card));
 	            }
 	            else {
-	                reject("No card present in reader");
+	                reject('No card present in reader');
 	            }
 	        });
 	    };
@@ -77333,12 +77333,12 @@ var GCLLib =
 	                resolve(args);
 	            }
 	            else {
-	                reject("Cannot determine method to use for data dump");
+	                reject('Cannot determine method to use for data dump');
 	            }
 	        });
 	    };
 	    GenericService.doDataDump = function (args) {
-	        if (args.container === "luxeid") {
+	        if (args.container === 'luxeid') {
 	            return args.client.luxeid(args.readerId, args.data.pin).allData({ filters: [], parseCerts: true });
 	        }
 	        if (args.dumpOptions) {
@@ -77349,7 +77349,7 @@ var GCLLib =
 	        }
 	    };
 	    GenericService.doSign = function (args) {
-	        if (args.container === "luxeid") {
+	        if (args.container === 'luxeid') {
 	            return args.client.luxeid(args.readerId, args.data.pin).signData(args.data);
 	        }
 	        else {
@@ -77357,7 +77357,7 @@ var GCLLib =
 	        }
 	    };
 	    GenericService.doAuthenticate = function (args) {
-	        if (args.container === "luxeid") {
+	        if (args.container === 'luxeid') {
 	            return args.client.luxeid(args.readerId, args.data.pin).authenticate(args.data);
 	        }
 	        else {
@@ -77365,17 +77365,17 @@ var GCLLib =
 	        }
 	    };
 	    GenericService.doVerifyPin = function (args) {
-	        if (args.container === "luxeid") {
+	        if (args.container === 'luxeid') {
 	            return args.client.luxeid(args.readerId, args.data.pin).verifyPin(args.data);
 	        }
-	        else if (args.container === "beid") {
+	        else if (args.container === 'beid') {
 	            var verifyPinData = {
 	                pin: args.data.pin,
 	                private_key_reference: EidBe_1.EidBe.VERIFY_PRIV_KEY_REF
 	            };
 	            return args.client.beid(args.readerId).verifyPin(verifyPinData);
 	        }
-	        else if (args.container === "aventra") {
+	        else if (args.container === 'aventra') {
 	            var verifyPinData = {
 	                pin: args.data.pin,
 	                private_key_reference: Aventra_1.Aventra.DEFAULT_VERIFY_PIN

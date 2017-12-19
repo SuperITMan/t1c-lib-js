@@ -3,8 +3,9 @@
  * @since 2017
  */
 
-import * as CoreExceptions from "../exceptions/CoreExceptions";
-import { BrowserInfo, T1CResponse } from "../service/CoreModel";
+import * as CoreExceptions from '../exceptions/CoreExceptions';
+import { BrowserInfo, T1CResponse } from '../service/CoreModel';
+import { Promise } from 'es6-promise';
 
 export { AbstractDSClient, DSInfoResponse, DownloadLinkResponse, JWTResponse, DSPubKeyResponse,
     DeviceResponse, DSPlatformInfo };

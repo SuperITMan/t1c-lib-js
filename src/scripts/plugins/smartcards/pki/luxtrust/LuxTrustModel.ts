@@ -2,9 +2,10 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../../core/exceptions/CoreExceptions";
-import { CertificateResponse, DataObjectResponse, DataResponse } from "../../../../core/service/CoreModel";
-import { CertCard } from "../../Card";
+import { RestException } from '../../../../core/exceptions/CoreExceptions';
+import { CertificateResponse, DataObjectResponse, DataResponse } from '../../../../core/service/CoreModel';
+import { CertCard } from '../../Card';
+import { Promise } from 'es6-promise';
 
 export { AbstractLuxTrust, AllCertsResponse, AllDataResponse };
 

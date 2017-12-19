@@ -2,8 +2,9 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../core/exceptions/CoreExceptions";
-import { BoolDataResponse, DataResponse, T1CResponse } from "../../core/service/CoreModel";
+import { RestException } from '../../core/exceptions/CoreExceptions';
+import { BoolDataResponse, DataResponse, T1CResponse } from '../../core/service/CoreModel';
+import { Promise } from 'es6-promise';
 
 export { AbstractRemoteLoading, APDU, CommandResponse, CommandsResponse, Command };
 

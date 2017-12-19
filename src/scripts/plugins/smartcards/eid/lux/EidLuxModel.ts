@@ -2,13 +2,14 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../../core/exceptions/CoreExceptions";
-import { OptionalPin, SecuredCertCard } from "../../Card";
+import { RestException } from '../../../../core/exceptions/CoreExceptions';
+import { OptionalPin, SecuredCertCard } from '../../Card';
 import {
     CertificateResponse, CertificatesResponse, T1CCertificate,
     T1CResponse
-} from "../../../../core/service/CoreModel";
-import { Options } from "../../../../util/RequestHandler";
+} from '../../../../core/service/CoreModel';
+import { Options } from '../../../../util/RequestHandler';
+import { Promise } from 'es6-promise';
 
 export { AbstractEidLUX, AllCertsResponse, AllDataResponse, Biometric, BiometricResponse,
     Picture, PictureResponse, SignatureImage, SignatureImageResponse };
@@ -51,16 +52,16 @@ interface AllDataResponse extends AllCertsResponse {
 }
 
 interface Biometric {
-    "birthDate": string
-    "documentNumber": string
-    "documentType": string
-    "firstName": string
-    "gender": string
-    "issuingState": string
-    "lastName": string
-    "nationality": string
-    "validityEndDate": string
-    "validityStartDate": string
+    'birthDate': string
+    'documentNumber': string
+    'documentType': string
+    'firstName': string
+    'gender': string
+    'issuingState': string
+    'lastName': string
+    'nationality': string
+    'validityEndDate': string
+    'validityStartDate': string
 }
 
 interface BiometricResponse extends T1CResponse {

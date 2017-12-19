@@ -6,6 +6,7 @@ import { GenericContainer } from '../smartcards/Card';
 import { AbstractFileExchange, FileListResponse, ListFilesRequest } from './FileExchangeModel';
 import { RestException } from '../../core/exceptions/CoreExceptions';
 import { DataResponse } from '../../core/service/CoreModel';
+import { Promise } from 'es6-promise';
 
 export { FileExchange };
 

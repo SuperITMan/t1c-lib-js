@@ -2,11 +2,13 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../core/exceptions/CoreExceptions";
-import { PinCard } from "../Card";
-import { DataObjectResponse, DataResponse, T1CResponse } from "../../../core/service/CoreModel";
+import { RestException } from '../../../core/exceptions/CoreExceptions';
+import { PinCard } from '../Card';
+import { T1CResponse } from '../../../core/service/CoreModel';
+import { Promise } from 'es6-promise';
 
-export { AbstractEMV, AllDataResponse, ApplicationDataResponse, ApplicationsResponse, EmvCertificateResponse };
+export { AbstractEMV, AllDataResponse, ApplicationDataResponse,
+    ApplicationData, ApplicationsResponse, Application, EmvCertificateResponse, EmvCertificate };
 
 
 interface AbstractEMV extends PinCard {

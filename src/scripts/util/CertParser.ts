@@ -64,7 +64,7 @@ class CertParser {
     }
 
 
-    public static processCert(certificate: string): T1CCertificate {
+    public static processCert(certificate: string): Certificate {
         let rawCert = Base64.atob(certificate);
         let buffer = CertParser.str2ab(rawCert);
         const asn1 = asn1js.fromBER(buffer);

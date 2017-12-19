@@ -2,11 +2,12 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../../core/exceptions/CoreExceptions";
+import { RestException } from '../../../../core/exceptions/CoreExceptions';
 import { CertCard, OptionalPin } from '../../Card';
-import { CertificateResponse, DataObjectResponse, DataResponse, T1CCertificate } from "../../../../core/service/CoreModel";
+import { CertificateResponse, DataObjectResponse, DataResponse, T1CCertificate } from '../../../../core/service/CoreModel';
+import { Promise } from 'es6-promise';
 
-export { AbstractEidPT, AllCertsResponse, AllDataResponse, IdDataResponse, PtAddressResponse };
+export { AbstractEidPT, AllCertsResponse, AllDataResponse, IdDataResponse, IdData, PtAddressResponse, PtAddressData };
 
 
 interface AbstractEidPT extends CertCard {

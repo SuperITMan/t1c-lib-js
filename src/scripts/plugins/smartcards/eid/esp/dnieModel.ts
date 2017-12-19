@@ -2,12 +2,13 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../../core/exceptions/CoreExceptions";
-import { OptionalPin, SecuredCertCard } from "../../Card";
-import { CertificateResponse, DataObjectResponse, T1CResponse } from "../../../../core/service/CoreModel";
-import { Options } from "../../../../util/RequestHandler";
+import { RestException } from '../../../../core/exceptions/CoreExceptions';
+import { OptionalPin, SecuredCertCard } from '../../Card';
+import { CertificateResponse, DataObjectResponse, T1CResponse } from '../../../../core/service/CoreModel';
+import { Options } from '../../../../util/RequestHandler';
+import { Promise } from 'es6-promise';
 
-export { AbstractDNIe, AllCertsResponse, AllDataResponse, InfoResponse };
+export { AbstractDNIe, AllCertsResponse, AllDataResponse, InfoResponse, Info };
 
 
 interface AbstractDNIe extends SecuredCertCard {

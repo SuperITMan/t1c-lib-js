@@ -2,9 +2,10 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { OptionalPin, PinCard } from "../Card";
-import { DataObjectResponse, DataResponse, T1CResponse } from "../../../core/service/CoreModel";
-import { RestException } from "../../../core/exceptions/CoreExceptions";
+import { OptionalPin, PinCard } from '../Card';
+import { DataObjectResponse, DataResponse, T1CResponse } from '../../../core/service/CoreModel';
+import { RestException } from '../../../core/exceptions/CoreExceptions';
+import { Promise } from 'es6-promise';
 
 export { AbstractOcra, AllDataResponse, ChallengeData, ReadCounterResponse };
 

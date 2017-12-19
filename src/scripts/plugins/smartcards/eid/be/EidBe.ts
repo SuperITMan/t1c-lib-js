@@ -3,22 +3,22 @@
  * @author Maarten Somers
  * @since 2016
  */
-import { AbstractEidBE, AddressResponse, RnDataResponse } from "./EidBeModel";
-import { RestException } from "../../../../core/exceptions/CoreExceptions";
-import { CertificateResponse, DataResponse, T1CResponse } from "../../../../core/service/CoreModel";
-import { GenericCertCard, OptionalPin, VerifyPinData } from "../../Card";
-import { PinEnforcer } from "../../../../util/PinEnforcer";
-import { Promise } from "es6-promise";
-import { Options, RequestHandler } from "../../../../util/RequestHandler";
+import { AbstractEidBE, AddressResponse, RnDataResponse } from './EidBeModel';
+import { RestException } from '../../../../core/exceptions/CoreExceptions';
+import { CertificateResponse, DataResponse, T1CResponse } from '../../../../core/service/CoreModel';
+import { GenericCertCard, OptionalPin, VerifyPinData } from '../../Card';
+import { PinEnforcer } from '../../../../util/PinEnforcer';
+import { Promise } from 'es6-promise';
+import { Options, RequestHandler } from '../../../../util/RequestHandler';
 
 export { EidBe };
 
 
 class EidBe extends GenericCertCard implements AbstractEidBE {
-    static RN_DATA = "/rn";
-    static ADDRESS = "/address";
-    static PHOTO = "/picture";
-    static VERIFY_PRIV_KEY_REF = "non-repudiation";
+    static RN_DATA = '/rn';
+    static ADDRESS = '/address';
+    static PHOTO = '/picture';
+    static VERIFY_PRIV_KEY_REF = 'non-repudiation';
 
 
     public rnData(callback?: (error: RestException, data: RnDataResponse) => void): Promise<RnDataResponse> {

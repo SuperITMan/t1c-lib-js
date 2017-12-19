@@ -7,6 +7,7 @@ import { CertificateResponse, DataResponse } from '../../../../core/service/Core
 import { GenericCertCard } from '../../Card';
 import { AbstractLuxTrust } from './LuxTrustModel';
 import { Options, RequestHandler } from '../../../../util/RequestHandler';
+import { Promise } from 'es6-promise';
 
 export { LuxTrust };
 

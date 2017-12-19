@@ -4,8 +4,9 @@
  */
 import { RestException } from '../../core/exceptions/CoreExceptions';
 import { DataResponse, T1CResponse } from '../../core/service/CoreModel';
+import { Promise } from 'es6-promise';
 
-export { AbstractFileExchange, FileListResponse, ListFilesRequest };
+export { AbstractFileExchange, FileListResponse, ListFilesRequest, File };
 
 
 interface AbstractFileExchange {

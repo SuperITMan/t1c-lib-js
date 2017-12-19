@@ -2,13 +2,14 @@
  * @author Maarten Somers
  * @since 2017
  */
-import { RestException } from "../../../../core/exceptions/CoreExceptions";
-import { CertCard, OptionalPin } from "../../Card";
+import { RestException } from '../../../../core/exceptions/CoreExceptions';
+import { CertCard, OptionalPin } from '../../Card';
 import {
     CertificateResponse, DataObjectResponse, DataResponse,
     T1CResponse
-} from "../../../../core/service/CoreModel";
-import { Options } from "../../../../util/RequestHandler";
+} from '../../../../core/service/CoreModel';
+import { Options } from '../../../../util/RequestHandler';
+import { Promise } from 'es6-promise';
 
 export { AbstractEidBE, Address, AddressResponse, AllCertsResponse, AllDataResponse, RnData, RnDataResponse };
 

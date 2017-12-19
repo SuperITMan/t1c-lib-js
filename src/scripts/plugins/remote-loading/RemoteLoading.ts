@@ -5,8 +5,9 @@
 import { AbstractRemoteLoading, APDU, CommandResponse, CommandsResponse } from './RemoteLoadingModel';
 import { RestException } from '../../core/exceptions/CoreExceptions';
 import * as _ from 'lodash';
-import { BoolDataResponse, DataResponse, T1CResponse } from '../../core/service/CoreModel';
+import { BoolDataResponse, DataResponse } from '../../core/service/CoreModel';
 import { GenericReaderContainer } from '../smartcards/Card';
+import { Promise } from 'es6-promise';
 
 export { RemoteLoading };
 

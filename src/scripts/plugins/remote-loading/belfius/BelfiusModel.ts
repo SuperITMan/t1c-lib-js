@@ -3,9 +3,10 @@
  * @since 2017
  */
 
-import { RestException } from "../../../core/exceptions/CoreExceptions";
-import {BoolDataResponse, DataResponse, T1CResponse} from "../../../core/service/CoreModel";
-import { CommandResponse } from "../RemoteLoadingModel";
+import { RestException } from '../../../core/exceptions/CoreExceptions';
+import {BoolDataResponse, DataResponse, T1CResponse} from '../../../core/service/CoreModel';
+import { CommandResponse } from '../RemoteLoadingModel';
+import { Promise } from 'es6-promise';
 
 export { AbstractBelfius };
 
